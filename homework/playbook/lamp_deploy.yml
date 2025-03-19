@@ -45,7 +45,7 @@
         dest: /var/www/html/index.php
         content: |
           <?php
-              echo "<p>Hello World</p>";
+              echo "<p>Hello from  {{ ansible_facts['hostname'] }}</p>";
           ?>
     - name: Ensure firewall allows HTTP and MySQL traffic
       firewalld:
