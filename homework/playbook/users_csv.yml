@@ -1,0 +1,56 @@
+---
+- name: Deploy users on server based on provided CSV source and setup user login
+  hosts: dbservers
+  become: yes  # Enable privilege escalation
+  become_method: sudo  # Use sudo for privilege escalation (default)
+  vars:
+    ansible_become_password: student  #  provide the sudo password for privilege escalation 
+    generic_admin_password: admin  # password assigned to the generic admin user
+
+  tasks:
+    - name: Read users from CSV file and return a dictionary
+      community.general.read_csv:
+        path: users.csv
+        delimiter: ','
+      register: file_users
+      delegate_to: localhost
+    
+
+
+    - name: Create users on a host if it is in the CSV file, if not, create a generic admin user which has sudo
+      user:
+        name: "{{ item.username }}"
+        state: present
+        comment: "Owner team {{item.comment}}"
+        shell: /bin/bash
+        password: "{{ generic_admin_password | password_hash('sha512') if item.owner_team == 'ADM' else '' }}"
+      loop: "{{ file_users.list }}"
+      when: item.owner_team != 'ADM'
+
+# Ensure the .ssh directory exists for each user
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: /home/{{ item.username }}/.ssh
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: '0700'
+      loop: "{{ file_users.list }}"
+
+#  Generate SSH key pairs for functional users and store the private key on the local and target host
+    - name: Generate SSH key pairs for functional users
+      ansible.builtin.openssh_keypair:
+        path: /home/{{ item.username }}/.ssh/id_rsa
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: '0600'
+        type: rsa
+        size: 2048
+      loop: "{{ file_users.list }}"
+      when: item.functional == '1'
+      register: ssh_key  # Using to register the key in list named ssh_key
+
+    - name: Debug generated key pairs
+      debug:
+        msg: "keys for  Private {{ ssh_key }} "
+      
