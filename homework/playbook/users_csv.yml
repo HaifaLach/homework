@@ -14,18 +14,17 @@
         delimiter: ','
       register: file_users
       delegate_to: localhost
-    
 
-
-    - name: Create users on a host if it is in the CSV file, if not, create a generic admin user which has sudo
+# Create users on a host if it is in the CSV file, if not, create a generic admin user which has sudo 
+    - name: Create users on a host from the CSV file
       user:
         name: "{{ item.username }}"
         state: present
         comment: "Owner team {{item.comment}}"
         shell: /bin/bash
-        password: "{{ generic_admin_password | password_hash('sha512') if item.owner_team == 'ADM' else '' }}"
+        password: "{{ generic_admin_password | password_hash('sha512') }}"
       loop: "{{ file_users.list }}"
-      when: item.owner_team != 'ADM'
+      #   when: item.owner_team != 'ADM'
 
 # Ensure the .ssh directory exists for each user
     - name: Ensure .ssh directory exists
@@ -48,9 +47,43 @@
         size: 2048
       loop: "{{ file_users.list }}"
       when: item.functional == '1'
-      register: ssh_key  # Using to register the key in list named ssh_key
+      register: ssh_key  # register the key in list  ssh_key
 
+# Debug generated key  values
     - name: Debug generated key pairs
       debug:
-        msg: "keys for  Private {{ ssh_key }} "
-      
+        msg: "keys {{ ssh_key }} "
+
+    - name: Deploy the user’s public RSA key from the CSV file
+      authorized_key:
+        user: "{{ item.username }}"
+        state: present
+        key: "{{ item.pub_key }}"
+      loop: "{{ file_users.list }}"
+      when: item.pub_key != ""  
+
+    - name: Users without RSA keys should be locked/expired
+      user: 
+        name: "{{ item.name }}"
+        state: locked
+      when: item.functional == '1'  and item.pub_key == ""
+
+
+#  Ensure RSA key authentication is enabled
+    - name: Restrict server login to only RSA keys by disabling password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify:
+         - Restart SSH service  
+
+# Handler to restart SSH service to apply the change from the confi file
+  handlers:
+
+    - name: Restart SSH service  
+      service:
+        name: sshd  
+        state: restarted  
+
+
