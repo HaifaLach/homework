@@ -10,6 +10,6 @@ Before running this playbook, you will need:
 - Python 3
 ## Configuration
 # Git Clone and Checkout Instructions
-   git clone https://github.com/HaifaLach/homework.git
-   git branch
-   git checkout master
+   - git clone https://github.com/HaifaLach/homework.git
+   - git branch
+   - git checkout master
