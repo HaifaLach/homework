@@ -28,7 +28,7 @@
 
 # Ensure the .ssh directory exists for each user
     - name: Ensure .ssh directory exists
-      ansible.builtin.file:
+      file:
         path: /home/{{ item.username }}/.ssh
         state: directory
         owner: "{{ item.username }}"
@@ -38,7 +38,7 @@
 
 #  Generate SSH key pairs for functional users and store the private key on the local and target host
     - name: Generate SSH key pairs for functional users
-      ansible.builtin.openssh_keypair:
+      openssh_keypair:
         path: /home/{{ item.username }}/.ssh/id_rsa
         owner: "{{ item.username }}"
         group: "{{ item.username }}"
@@ -54,6 +54,7 @@
       debug:
         msg: "keys {{ ssh_key }} "
 
+# Deploy public key  users 
     - name: Deploy the user’s public RSA key from the CSV file
       authorized_key:
         user: "{{ item.username }}"
@@ -62,12 +63,13 @@
       loop: "{{ file_users.list }}"
       when: item.pub_key != ""  
 
+# Users without RSA keys should be locked/expired
     - name: Users without RSA keys should be locked/expired
       user: 
-        name: "{{ item.name }}"
-        state: locked
-      when: item.functional == '1'  and item.pub_key == ""
-
+        name: "{{ item.username }}"
+        shell: /sbin/nologin
+      loop: "{{ file_users.list }}"
+      when: item.pub_key == ""
 
 #  Ensure RSA key authentication is enabled
     - name: Restrict server login to only RSA keys by disabling password authentication
@@ -84,6 +86,4 @@
     - name: Restart SSH service  
       service:
         name: sshd  
-        state: restarted  
-
-
+        state: restarted
