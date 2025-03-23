@@ -10,7 +10,7 @@ Before running this playbook, you will need:
 - Python 3
 ## Installation 
 Before runnig this playbook istall community.general collection
-ansible-galaxy collection install community.general
+- ansible-galaxy collection install community.general
 
 ## Configuration
 # Git Clone and Checkout Instructions
