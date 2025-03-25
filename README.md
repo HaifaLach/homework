@@ -42,4 +42,4 @@ This playbook modifies the /etc/hosts file on the remote machine using Jinja2 te
   - Modify the /etc/hosts file based on a Jinja2 template.
   - Ensure correct host mappings are added to the file.
 - Usage:
-ansible-playbook modify-hosts-file.yml
+ansible-playbook  -i ../inventory modify_hosts.yml
