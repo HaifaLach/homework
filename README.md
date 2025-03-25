@@ -40,5 +40,6 @@ This playbook modifies the /etc/hosts file on the remote machine using Jinja2 te
   - Ensure correct host mappings are added to the file.
 - Usage:
 ansible-playbook  -i ../inventory modify_hosts.yml
-# The templates folder in an Ansible project is where you store Jinja2 template files. These template files are used to dynamically generate configuration files.
-# The host_vars folder used to store Ansible Vault encrypted files
+------------------------------------------------------------------------
+- The templates folder in an Ansible project is where you store Jinja2 template files
+- The host_vars folder used to store Ansible Vault encrypted files
