@@ -3,17 +3,20 @@
   hosts: webservers
   gather_facts: true
   tasks:
-
+          
+ #  This ensures that the Apache package is installed and running on all target hosts
     - name: install Apache 
       yum:
         name: httpd
         state: present
 
+ # Installing MySQL server for database
     - name: install MYSQL server
       yum:
         name: mysql-server
         state: present
 
+#  This will ensure the server is ready to process PHP page
     - name: install PHP
       yum: 
         name: 
@@ -24,22 +27,26 @@
          - php-json
         state: present
 
+# Ensure that Apache web server is started and enabled to start on boot.
     - name: Ensure Apache is started and enabled 
       service:
         name: httpd
         state: started
         enabled: yes
+ 
     - name: Restart Apache to load PHP
       service:
         name: httpd
         state: restarted
 
+# Ensure that MySQL service is started and enabled to start on boot.
     - name: Ensure MYSQL is started and enabled
       service:
         name: mysqld
         state: started
         enabled: yes
 
+# Copy PHP content to the index.php file for web server on the target host.
     - name: Copy content to index.php
       copy:
         dest: /var/www/html/index.php
@@ -47,6 +54,7 @@
           <?php
               echo "<p>Hello from  {{ ansible_facts['hostname'] }}</p>";
           ?>
+# Allow HTTP traffic port 80 via  the firewall 
     - name: Ensure firewall allows HTTP and MySQL traffic
       firewalld:
         service: http
