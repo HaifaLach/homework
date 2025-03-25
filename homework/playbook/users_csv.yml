@@ -4,8 +4,9 @@
   become: yes  # Enable privilege escalation
   become_method: sudo  # Use sudo for privilege escalation (default)
   vars:
-    ansible_become_password: student  #  provide the sudo password for privilege escalation 
-    generic_admin_password: admin  # password assigned to the generic admin user
+    ansible_become_password: student  #  provide the sudo password for privilege escalation
+  vars_files:
+    - ./host_vars/secret.yml
 
   tasks:
     - name: Read users from CSV file and return a dictionary
@@ -22,7 +23,7 @@
         state: present
         comment: "Owner team {{item.comment}}"
         shell: /bin/bash
-        password: "{{ generic_admin_password | password_hash('sha512') }}"
+        password: "{{ become_pass | password_hash('sha512') }}"
       loop: "{{ file_users.list }}"
       #   when: item.owner_team != 'ADM'
 
@@ -67,7 +68,7 @@
     - name: Users without RSA keys should be locked/expired
       user: 
         name: "{{ item.username }}"
-        shell: /sbin/nologin
+        shell: /sbin/nologiin
       loop: "{{ file_users.list }}"
       when: item.pub_key == ""
 
