@@ -1,6 +1,4 @@
-
 # Ansible Homework: 
-
 ## Description
 This is my homework project 
 
@@ -25,7 +23,6 @@ This playbook installs the LAMP stack (Linux, Apache, MySQL, PHP) on a remote se
   - Start and enable the Apache and MySQL services.
   - Configure firewalld to allow HTTP
   - Copy a basic index.php file to /var/www/html/.
-
 - Usage:
 ansible-playbook  -i ../inventory --ask-vault-pass lamp_deploy.yml
 ## Playbook 2: Configure Users with RSA Key
@@ -43,3 +40,5 @@ This playbook modifies the /etc/hosts file on the remote machine using Jinja2 te
   - Ensure correct host mappings are added to the file.
 - Usage:
 ansible-playbook  -i ../inventory modify_hosts.yml
+# The templates folder in an Ansible project is where you store Jinja2 template files. These template files are used to dynamically generate configuration files.
+# The host_vars folder used to store Ansible Vault encrypted files
