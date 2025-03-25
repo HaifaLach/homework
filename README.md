@@ -31,8 +31,15 @@ ansible-playbook  -i ../inventory --ask-vault-pass lamp_deploy.yml
 ## Playbook 2: Configure Users with RSA Key
 This playbook is designed to configure users on the remote server and set up their SSH access using RSA key pairs.
 - Tasks:
-   - Create new users (if they don't exist).
+   - Create new users.
    - Set up RSA SSH key-based authentication for users.
    - Copy the public key to the remote server's authorized keys.
-- Usage
+- Usage:
 ansible-playbook  -i ../inventory --ask-vault-pass users_csv.yml
+## Playbook 3: Modify Host File Using Jinja2
+This playbook modifies the /etc/hosts file on the remote machine using Jinja2 templates.
+- Tasks:
+  - Modify the /etc/hosts file based on a Jinja2 template.
+  - Ensure correct host mappings are added to the file.
+- Usage:
+ansible-playbook modify-hosts-file.yml
