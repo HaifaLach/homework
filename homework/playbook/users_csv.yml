@@ -1,0 +1,90 @@
+---
+- name: Deploy users on server based on provided CSV source and setup user login
+  hosts: dbservers
+  become: yes  # Enable privilege escalation
+  become_method: sudo  # Use sudo for privilege escalation (default)
+  vars:
+    ansible_become_password: student  #  provide the sudo password for privilege escalation
+  vars_files:
+    - ./host_vars/secret.yml
+
+  tasks:
+    - name: Read users from CSV file and return a dictionary
+      community.general.read_csv:
+        path: users.csv
+        delimiter: ','
+      register: file_users
+      delegate_to: localhost
+
+# Create users on a host if it is in the CSV file, if not, create a generic admin user which has sudo 
+    - name: Create users on a host from the CSV file
+      user:
+        name: "{{ item.username }}"
+        state: present
+        comment: "Owner team {{item.comment}}"
+        shell: /bin/bash
+        password: "{{ become_pass | password_hash('sha512') }}"
+      loop: "{{ file_users.list }}"
+      #   when: item.owner_team != 'ADM'
+
+# Ensure the .ssh directory exists for each user
+    - name: Ensure .ssh directory exists
+      file:
+        path: /home/{{ item.username }}/.ssh
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: '0700'
+      loop: "{{ file_users.list }}"
+
+#  Generate SSH key pairs for functional users and store the private key on the local and target host
+    - name: Generate SSH key pairs for functional users
+      openssh_keypair:
+        path: /home/{{ item.username }}/.ssh/id_rsa
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: '0600'
+        type: rsa
+        size: 2048
+      loop: "{{ file_users.list }}"
+      when: item.functional == '1'
+      register: ssh_key  # register the key in list  ssh_key
+
+# Debug generated key  values
+    - name: Debug generated key pairs
+      debug:
+        msg: "keys {{ ssh_key }} "
+
+# Deploy public key  users 
+    - name: Deploy the user’s public RSA key from the CSV file
+      authorized_key:
+        user: "{{ item.username }}"
+        state: present
+        key: "{{ item.pub_key }}"
+      loop: "{{ file_users.list }}"
+      when: item.pub_key != ""  
+
+# Users without RSA keys should be locked/expired
+    - name: Users without RSA keys should be locked/expired
+      user: 
+        name: "{{ item.username }}"
+        shell: /sbin/nologiin
+      loop: "{{ file_users.list }}"
+      when: item.pub_key == ""
+
+#  Ensure RSA key authentication is enabled
+    - name: Restrict server login to only RSA keys by disabling password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify:
+         - Restart SSH service  
+
+# Handler to restart SSH service to apply the change from the confi file
+  handlers:
+
+    - name: Restart SSH service  
+      service:
+        name: sshd  
+        state: restarted
